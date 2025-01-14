@@ -12,7 +12,8 @@
     "testPathIgnorePatterns": [
       "/node_modules/",
       "config.js"
-    ]
+    ],
+    "detectOpenHandles": true
   },
   "keywords": [],
   "author": "",

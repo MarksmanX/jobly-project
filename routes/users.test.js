@@ -102,6 +102,7 @@ describe("GET /users", function () {
           lastName: "U1L",
           email: "user1@user.com",
           isAdmin: false,
+          jobs: [1],
         },
         {
           username: "u2",
@@ -109,6 +110,7 @@ describe("GET /users", function () {
           lastName: "U2L",
           email: "user2@user.com",
           isAdmin: true,
+          jobs: [2],
         },
         {
           username: "u3",
@@ -116,6 +118,7 @@ describe("GET /users", function () {
           lastName: "U3L",
           email: "user3@user.com",
           isAdmin: false,
+          jobs: [],
         },
       ],
     });
@@ -325,5 +328,37 @@ describe("DELETE /users/:username", function () {
       .delete(`/users/nope`)  // Trying to delete a non-existent user
       .set("authorization", `Bearer ${adminToken}`);
     expect(resp.statusCode).toEqual(404); // Not Found
+  });
+});
+
+/************************************** POST /users/:username/jobs/:id */
+
+describe("POST /users/:username/jobs/:id", function () {
+  // Test for applying to job with valid data
+  test("works for correct user", async function () {
+    const resp = await request(app)
+      .post(`/users/u1/jobs/3`)
+      .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(200);
+    expect(resp.body).toEqual({ applied: 3 });
+  
+    const res = await db.query("SELECT * FROM applications WHERE username = 'u1'");
+    expect(res.rows).toEqual([{ username: "u1", job_id: 1 }, { username: "u1", job_id: 3 }]);
+  });
+  
+  // Test for applying to job with invalid data
+  test("bad request if invalid data", async function () {
+    const resp = await request(app)
+      .post(`/users/u1/jobs/1000`)
+      .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(404);
+  });
+
+  // Test for applying to job with non-existing user
+  test("not found if no such user", async function () {
+    const resp = await request(app)
+      .post(`/users/nope/jobs/1`)
+      .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(403);
   });
 });

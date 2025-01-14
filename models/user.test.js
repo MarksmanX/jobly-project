@@ -117,6 +117,7 @@ describe("findAll", function () {
         lastName: "U1L",
         email: "u1@email.com",
         isAdmin: false,
+        jobs: [1],
       },
       {
         username: "u2",
@@ -124,6 +125,7 @@ describe("findAll", function () {
         lastName: "U2L",
         email: "u2@email.com",
         isAdmin: false,
+        jobs: [2],
       },
     ]);
   });
@@ -222,6 +224,35 @@ describe("remove", function () {
   test("not found if no such user", async function () {
     try {
       await User.remove("nope");
+      fail();
+    } catch (err) {
+      expect(err instanceof NotFoundError).toBeTruthy();
+    }
+  });
+});
+
+/************************************** applyForJob */
+
+describe("applyForJob", function () {
+  test("works", async function () {
+    await User.applyForJob("u1", 3);
+    const res = await db.query(
+        `SELECT * FROM applications WHERE username='u1' AND job_id=3`);
+    expect(res.rows.length).toEqual(1);
+  });
+
+  test("not found if no such user", async function () {
+    try {
+      await User.applyForJob("nope", 1);
+      fail();
+    } catch (err) {
+      expect(err instanceof NotFoundError).toBeTruthy();
+    }
+  });
+
+  test("not found if no such job", async function () {
+    try {
+      await User.applyForJob("u1", 9999);
       fail();
     } catch (err) {
       expect(err instanceof NotFoundError).toBeTruthy();

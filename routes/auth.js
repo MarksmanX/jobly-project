@@ -59,7 +59,7 @@ router.post("/register", async function (req, res, next) {
     return res.status(201).json({ token });
   } catch (err) {
     return next(err);
-  }
+  } 
 });
 
 

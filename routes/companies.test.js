@@ -59,7 +59,7 @@ describe("POST /companies", function () {
         handle: "new",
         numEmployees: 10,
       })
-      .set("authorization", `Bearer ${u1Token}`); // Using regular user token
+      .set("authorization", `Bearer ${adminToken}`); // Using admin token
     expect(resp.statusCode).toEqual(400);
   });
 
@@ -70,7 +70,7 @@ describe("POST /companies", function () {
         ...newCompany,
         logoUrl: "not-a-url",
       })
-      .set("authorization", `Bearer ${u1Token}`); // Using regular user token
+      .set("authorization", `Bearer ${adminToken}`); // Using regular user token
     expect(resp.statusCode).toEqual(400);
   });
 });
@@ -121,21 +121,21 @@ describe("GET /companies", function () {
   });
 
   test("filters companies by minEmployees and maxEmployees", async function () {
-    const response = await request(app).get("/companies?minEmployees=100&maxEmployees=500");
+    const response = await request(app).get("/companies?minEmployees=2&maxEmployees=5");
     expect(response.statusCode).toBe(200);
     expect(response.body.companies.length).toBeGreaterThan(0);
 
     // Check that all companies meet the employee count criteria
     response.body.companies.forEach(company => {
-      expect(company.numEmployees).toBeGreaterThanOrEqual(100);
-      expect(company.numEmployees).toBeLessThanOrEqual(500);
+      expect(company.numEmployees).toBeGreaterThanOrEqual(2);
+      expect(company.numEmployees).toBeLessThanOrEqual(5);
     });
   });
 
   test("returns a 400 error when minEmployees > maxEmployees", async function () {
     const response = await request(app).get("/companies?minEmployees=500&maxEmployees=100");
     expect(response.statusCode).toBe(400);
-    expect(response.body.message).toBe("minEmployees cannot be greater than maxEmployees");
+    expect(response.body.error.message).toBe("minEmployees cannot be greater than maxEmployees");
   });
 });
 
@@ -151,6 +151,14 @@ describe("GET /companies/:handle", function () {
         description: "Desc1",
         numEmployees: 1,
         logoUrl: "http://c1.img",
+        jobs: [
+          {
+            equity: "0.1",
+            id: expect.any(Number),
+            salary: 100000,
+            title: "j1",
+          }
+        ],
       },
     });
   });
@@ -164,6 +172,14 @@ describe("GET /companies/:handle", function () {
         description: "Desc2",
         numEmployees: 2,
         logoUrl: "http://c2.img",
+        jobs: [
+          {
+            equity: "0.2",
+            id: expect.any(Number),
+            salary: 200000,
+            title: "j2",
+          }
+        ],
       },
     });
   });

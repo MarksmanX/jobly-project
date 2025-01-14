@@ -3,6 +3,7 @@
 const db = require("../db.js");
 const User = require("../models/user");
 const Company = require("../models/company");
+const Job = require("../models/job");
 const { createToken } = require("../helpers/tokens");
 
 async function commonBeforeAll() {
@@ -10,6 +11,13 @@ async function commonBeforeAll() {
   await db.query("DELETE FROM users");
   // noinspection SqlWithoutWhere
   await db.query("DELETE FROM companies");
+  // noinspection SqlWithoutWhere
+  await db.query("DELETE FROM jobs");
+  // noinspection SqlWithoutWhere
+  await db.query("DELETE FROM applications");
+
+  // Reset job ID sequence to start from 1
+  await db.query("ALTER SEQUENCE jobs_id_seq RESTART WITH 1");
 
   await Company.create(
       {
@@ -60,6 +68,30 @@ async function commonBeforeAll() {
     password: "password3",
     isAdmin: false,
   });
+
+  await Job.create({
+    title: "j1",
+    salary: 100000,
+    equity: 0.1,
+    companyHandle: "c1",
+  });
+  await Job.create({
+    title: "j2",
+    salary: 200000,
+    equity: 0.2,
+    companyHandle: "c2",
+  });
+  await Job.create({
+    title: "j3",
+    salary: 300000,
+    equity: 0.3,
+    companyHandle: "c3",
+  });
+
+  await db.query(`
+    INSERT INTO applications (username, job_id)
+    VALUES ('u1', 1),
+           ('u2', 2)`);
 }
 
 async function commonBeforeEach() {
@@ -71,7 +103,9 @@ async function commonAfterEach() {
 }
 
 async function commonAfterAll() {
+  console.log("Closing connections...");
   await db.end();
+  console.log("Connections closed.");
 }
 
 

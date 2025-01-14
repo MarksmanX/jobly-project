@@ -102,18 +102,28 @@ class User {
    **/
 
   static async findAll() {
-    const result = await db.query(
-          `SELECT username,
-                  first_name AS "firstName",
-                  last_name AS "lastName",
-                  email,
-                  is_admin AS "isAdmin"
-           FROM users
-           ORDER BY username`,
+    const userRes = await db.query(
+      `SELECT u.username,
+              u.first_name AS "firstName",
+              u.last_name AS "lastName",
+              u.email,
+              u.is_admin AS "isAdmin",
+              json_agg(a.job_id) AS jobs
+       FROM users u
+       LEFT JOIN applications a ON u.username = a.username
+       GROUP BY u.username
+       ORDER BY u.username`
     );
-
-    return result.rows;
-  }
+  
+    return userRes.rows.map(user => ({
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      isAdmin: user.isAdmin,
+      jobs: user.jobs.filter(jobId => jobId !== null), // Filter out null values (users without jobs)
+    }));
+  }  
 
   /** Given a username, return data about user.
    *
@@ -204,6 +214,41 @@ class User {
 
     if (!user) throw new NotFoundError(`No user: ${username}`);
   }
+
+    /** Apply for a job: update db, returns undefined.
+   *
+   * - username: user's username
+   * - jobId: job id
+   *
+   * Throws NotFoundError if username or jobId doesn't exist.
+   */
+  static async applyForJob(username, jobId) {
+    // Check if user exists
+    const userCheck = await db.query(
+      `SELECT username
+      FROM users
+      WHERE username = $1`,
+      [username]
+    );
+    if (!userCheck.rows[0]) throw new NotFoundError(`No user: ${username}`);
+
+    // Check if job exists
+    const jobCheck = await db.query(
+      `SELECT id
+      FROM jobs
+      WHERE id = $1`,
+      [jobId]
+    );
+    if (!jobCheck.rows[0]) throw new NotFoundError(`No job: ${jobId}`);
+
+    // Insert into applications table
+    await db.query(
+      `INSERT INTO applications (username, job_id)
+      VALUES ($1, $2)`,
+      [username, jobId]
+    );
+  }
+
 }
 
 
